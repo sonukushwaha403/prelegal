@@ -1,0 +1,121 @@
+# ============================================================
+# Python / FastAPI
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+.eggs/
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables
+*.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*.local
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Ruff / linting
+.ruff_cache/
+
+# Alembic
+alembic/versions/__pycache__/
+
+# ============================================================
+# Next.js / Node.js
+# ============================================================
+node_modules/
+.next/
+out/
+.vercel/
+.turbo/
+
+# Build output
+/build
+/dist
+
+# Next.js cache
+.next/cache/
+
+# npm / yarn / pnpm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.yarn/
+.pnp.*
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# ============================================================
+# IDEs & Editors
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============================================================
+# Docker
+# ============================================================
+.dockerignore
+
+# ============================================================
+# Databases & Secrets
+# ============================================================
+*.sqlite
+*.sqlite3
+*.db
+*.pem
+*.key
+*.crt
+secrets/
+
+# ============================================================
+# Logs & OS
+# ============================================================
+logs/
+*.log
+*.pid
+*.seed
+*.pid.lock
