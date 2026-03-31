@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Mutual Non-Disclosure Agreement",
+    "description": "Standard terms for a mutual non-disclosure agreement allowing both parties to share confidential information for a defined purpose.",
+    "filename": "templates/Mutual-NDA.md"
+  },
+  {
+    "name": "Mutual NDA Cover Page",
+    "description": "Cover page template for the Common Paper Mutual NDA, including fields for purpose, effective date, term, governing law, and party signatures.",
+    "filename": "templates/Mutual-NDA-coverpage.md"
+  },
+  {
+    "name": "Cloud Service Agreement",
+    "description": "Common Paper standard Cloud Service Agreement covering SaaS product access, restrictions, privacy, payment, term, warranties, liability, indemnification, and confidentiality.",
+    "filename": "templates/CSA.md"
+  },
+  {
+    "name": "Design Partner Agreement",
+    "description": "Common Paper standard Design Partner Agreement for early-access product partnerships, covering product access, feedback, IP ownership, confidentiality, and general terms.",
+    "filename": "templates/design-partner-agreement.md"
+  },
+  {
+    "name": "Service Level Agreement",
+    "description": "Common Paper Service Level Agreement defining uptime and response time targets, service credits, and remedies for cloud service providers.",
+    "filename": "templates/sla.md"
+  },
+  {
+    "name": "Professional Services Agreement",
+    "description": "Common Paper standard Professional Services Agreement covering statements of work, deliverables, IP assignment, payment, warranties, liability, indemnification, and confidentiality.",
+    "filename": "templates/psa.md"
+  },
+  {
+    "name": "Data Processing Agreement",
+    "description": "Common Paper Data Processing Agreement covering GDPR-compliant processor obligations, restricted transfers, EEA/UK SCCs, security incident response, and audit rights.",
+    "filename": "templates/DPA.md"
+  },
+  {
+    "name": "Partnership Agreement",
+    "description": "Common Paper standard Partnership Agreement covering mutual obligations, trademark licensing, payment, confidentiality, liability, and indemnification for business partnerships.",
+    "filename": "templates/Partnership-Agreement.md"
+  },
+  {
+    "name": "Software License Agreement",
+    "description": "Common Paper standard Software License Agreement covering on-premise software licensing, restrictions, payment, warranties, liability, indemnification, and confidentiality.",
+    "filename": "templates/Software-License-Agreement.md"
+  },
+  {
+    "name": "Pilot Agreement",
+    "description": "Common Paper standard Pilot Agreement for short-term product evaluations, covering access, restrictions, disclaimer of warranties, liability cap, and confidentiality.",
+    "filename": "templates/Pilot-Agreement.md"
+  },
+  {
+    "name": "Business Associate Agreement",
+    "description": "Common Paper standard Business Associate Agreement (HIPAA BAA) covering PHI handling obligations, safeguards, breach notification, and subcontractor requirements.",
+    "filename": "templates/BAA.md"
+  },
+  {
+    "name": "AI Addendum",
+    "description": "Common Paper Standard AI Addendum covering AI service usage, model training restrictions, IP ownership of inputs and outputs, and AI-specific disclaimers.",
+    "filename": "templates/AI-Addendum.md"
+  }
+]
