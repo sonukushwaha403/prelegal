@@ -44,7 +44,7 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gray-100">
+    <div className="h-screen flex flex-col overflow-hidden bg-gray-100 print:h-auto print:overflow-visible">
       {/* Header */}
       <header className="no-print shrink-0 bg-slate-900 text-white px-6 py-3 flex items-center justify-between border-b border-slate-700">
         <div>
@@ -62,14 +62,14 @@ export default function Home() {
       </header>
 
       {/* Body */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden print:block print:overflow-visible print:h-auto">
         {/* Form panel */}
         <aside className="no-print w-80 shrink-0 overflow-y-auto bg-white border-r border-gray-200">
           <NDAForm values={values} onChange={handleChange} />
         </aside>
 
         {/* Preview panel */}
-        <main className="flex-1 overflow-y-auto bg-slate-200 print:bg-white">
+        <main className="flex-1 overflow-y-auto bg-slate-200 print:bg-white print:overflow-visible print:h-auto print:flex-none">
           <div className="py-8 px-6 print:p-0">
             <NDAPreview values={values} />
           </div>
