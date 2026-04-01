@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import NDAForm from '@/components/NDAForm'
 import NDAPreview from '@/components/NDAPreview'
 import { FormValues } from '@/lib/types'
+import { isAuthenticated, clearToken } from '@/lib/auth'
 
 // Re-export so existing imports from '@/app/page' continue to work
 export type { FormValues }
@@ -29,7 +31,17 @@ const defaultValues: FormValues = {
 }
 
 export default function Home() {
+  const router = useRouter()
+  const [authReady, setAuthReady] = useState(false)
   const [values, setValues] = useState<FormValues>(defaultValues)
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.replace('/login')
+    } else {
+      setAuthReady(true)
+    }
+  }, [router])
 
   // Set today's date only on the client to prevent SSR/hydration mismatch
   useEffect(() => {
@@ -43,6 +55,13 @@ export default function Home() {
     setValues(prev => ({ ...prev, [field]: value }))
   }
 
+  const handleLogout = () => {
+    clearToken()
+    router.replace('/login')
+  }
+
+  if (!authReady) return null
+
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-gray-100 print:h-auto print:overflow-visible">
       {/* Header */}
@@ -53,12 +72,20 @@ export default function Home() {
             Common Paper Mutual Non-Disclosure Agreement · Version 1.0
           </p>
         </div>
-        <button
-          onClick={() => window.print()}
-          className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-        >
-          Download PDF
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => window.print()}
+            className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          >
+            Download PDF
+          </button>
+          <button
+            onClick={handleLogout}
+            className="text-slate-400 hover:text-white text-sm transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
       </header>
 
       {/* Body */}
