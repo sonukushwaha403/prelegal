@@ -1,30 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import NDAForm from '@/components/NDAForm'
 import NDAPreview from '@/components/NDAPreview'
+import { FormValues } from '@/lib/types'
 
-export interface FormValues {
-  party1Company: string
-  party1Name: string
-  party1Title: string
-  party1Address: string
-  party2Company: string
-  party2Name: string
-  party2Title: string
-  party2Address: string
-  purpose: string
-  effectiveDate: string
-  mndaTermType: 'expires' | 'continues'
-  mndaTermYears: string
-  confidentialityType: 'years' | 'perpetuity'
-  confidentialityYears: string
-  governingLaw: string
-  jurisdiction: string
-  modifications: string
-}
-
-const today = new Date().toISOString().split('T')[0]
+// Re-export so existing imports from '@/app/page' continue to work
+export type { FormValues }
 
 const defaultValues: FormValues = {
   party1Company: '',
@@ -36,7 +18,7 @@ const defaultValues: FormValues = {
   party2Title: '',
   party2Address: '',
   purpose: 'Evaluating whether to enter into a business relationship with the other party.',
-  effectiveDate: today,
+  effectiveDate: '', // set client-side in useEffect to avoid SSR/client hydration mismatch
   mndaTermType: 'expires',
   mndaTermYears: '1',
   confidentialityType: 'years',
@@ -48,6 +30,14 @@ const defaultValues: FormValues = {
 
 export default function Home() {
   const [values, setValues] = useState<FormValues>(defaultValues)
+
+  // Set today's date only on the client to prevent SSR/hydration mismatch
+  useEffect(() => {
+    setValues(prev => ({
+      ...prev,
+      effectiveDate: prev.effectiveDate || new Date().toISOString().split('T')[0],
+    }))
+  }, [])
 
   const handleChange = (field: keyof FormValues, value: string) => {
     setValues(prev => ({ ...prev, [field]: value }))

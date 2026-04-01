@@ -1,6 +1,6 @@
 'use client'
 
-import { FormValues } from '@/app/page'
+import { FormValues } from '@/lib/types'
 
 interface Props {
   values: FormValues
@@ -16,6 +16,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
+/**
+ * Wraps a label and its control. Renders the input inside the <label> so that
+ * clicking the label text focuses/activates the control (fixes accessibility).
+ */
 function Field({
   label,
   hint,
@@ -27,106 +31,100 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-700 mb-1">
-        {label}
-        {hint && <span className="text-gray-400 font-normal ml-1">({hint})</span>}
+      <label className="block">
+        <span className="block text-xs font-medium text-gray-700 mb-1">
+          {label}
+          {hint && <span className="text-gray-400 font-normal ml-1">({hint})</span>}
+        </span>
+        {children}
       </label>
-      {children}
     </div>
   )
 }
 
-const inputCls =
+const baseInputCls =
   'w-full px-3 py-1.5 border border-gray-200 rounded text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
 
-const textareaCls =
-  'w-full px-3 py-1.5 border border-gray-200 rounded text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none'
+const inputCls = baseInputCls
+const textareaCls = `${baseInputCls} resize-none`
 
 const smallNumCls =
   'w-14 px-2 py-1 border border-gray-200 rounded text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-300'
 
+/** Renders the four party detail fields for one party. */
+function PartySection({
+  title,
+  prefix,
+  values,
+  onChange,
+  placeholders,
+}: {
+  title: string
+  prefix: 'party1' | 'party2'
+  values: FormValues
+  onChange: (field: keyof FormValues, value: string) => void
+  placeholders: { company: string; name: string; address: string }
+}) {
+  return (
+    <Section title={title}>
+      <Field label="Company Name">
+        <input
+          className={inputCls}
+          type="text"
+          value={values[`${prefix}Company`]}
+          onChange={e => onChange(`${prefix}Company`, e.target.value)}
+          placeholder={placeholders.company}
+        />
+      </Field>
+      <Field label="Signatory Name">
+        <input
+          className={inputCls}
+          type="text"
+          value={values[`${prefix}Name`]}
+          onChange={e => onChange(`${prefix}Name`, e.target.value)}
+          placeholder={placeholders.name}
+        />
+      </Field>
+      <Field label="Title">
+        <input
+          className={inputCls}
+          type="text"
+          value={values[`${prefix}Title`]}
+          onChange={e => onChange(`${prefix}Title`, e.target.value)}
+          placeholder="CEO"
+        />
+      </Field>
+      <Field label="Notice Address" hint="email or postal">
+        <input
+          className={inputCls}
+          type="text"
+          value={values[`${prefix}Address`]}
+          onChange={e => onChange(`${prefix}Address`, e.target.value)}
+          placeholder={placeholders.address}
+        />
+      </Field>
+    </Section>
+  )
+}
+
 export default function NDAForm({ values, onChange }: Props) {
   return (
     <div className="text-sm">
-      {/* Party 1 */}
-      <Section title="Party 1">
-        <Field label="Company Name">
-          <input
-            className={inputCls}
-            type="text"
-            value={values.party1Company}
-            onChange={e => onChange('party1Company', e.target.value)}
-            placeholder="Acme Corp"
-          />
-        </Field>
-        <Field label="Signatory Name">
-          <input
-            className={inputCls}
-            type="text"
-            value={values.party1Name}
-            onChange={e => onChange('party1Name', e.target.value)}
-            placeholder="Jane Smith"
-          />
-        </Field>
-        <Field label="Title">
-          <input
-            className={inputCls}
-            type="text"
-            value={values.party1Title}
-            onChange={e => onChange('party1Title', e.target.value)}
-            placeholder="CEO"
-          />
-        </Field>
-        <Field label="Notice Address" hint="email or postal">
-          <input
-            className={inputCls}
-            type="text"
-            value={values.party1Address}
-            onChange={e => onChange('party1Address', e.target.value)}
-            placeholder="jane@acme.com"
-          />
-        </Field>
-      </Section>
+      <PartySection
+        title="Party 1"
+        prefix="party1"
+        values={values}
+        onChange={onChange}
+        placeholders={{ company: 'Acme Corp', name: 'Jane Smith', address: 'jane@acme.com' }}
+      />
 
-      {/* Party 2 */}
-      <Section title="Party 2">
-        <Field label="Company Name">
-          <input
-            className={inputCls}
-            type="text"
-            value={values.party2Company}
-            onChange={e => onChange('party2Company', e.target.value)}
-            placeholder="Globex Inc."
-          />
-        </Field>
-        <Field label="Signatory Name">
-          <input
-            className={inputCls}
-            type="text"
-            value={values.party2Name}
-            onChange={e => onChange('party2Name', e.target.value)}
-            placeholder="John Doe"
-          />
-        </Field>
-        <Field label="Title">
-          <input
-            className={inputCls}
-            type="text"
-            value={values.party2Title}
-            onChange={e => onChange('party2Title', e.target.value)}
-            placeholder="CEO"
-          />
-        </Field>
-        <Field label="Notice Address" hint="email or postal">
-          <input
-            className={inputCls}
-            type="text"
-            value={values.party2Address}
-            onChange={e => onChange('party2Address', e.target.value)}
-            placeholder="john@globex.com"
-          />
-        </Field>
-      </Section>
+      <PartySection
+        title="Party 2"
+        prefix="party2"
+        values={values}
+        onChange={onChange}
+        placeholders={{ company: 'Globex Inc.', name: 'John Doe', address: 'john@globex.com' }}
+      />
 
       {/* Agreement Terms */}
       <Section title="Agreement Terms">

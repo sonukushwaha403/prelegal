@@ -1,6 +1,5 @@
-'use client'
-
-import { FormValues } from '@/app/page'
+import { FormValues } from '@/lib/types'
+import { formatDate } from '@/lib/utils'
 
 interface Props {
   values: FormValues
@@ -13,16 +12,6 @@ function V({ value, label }: { value: string; label: string }) {
     return <span className="font-semibold text-gray-900">{trimmed}</span>
   }
   return <span className="text-blue-500 italic font-normal">[{label}]</span>
-}
-
-function formatDate(dateStr: string): string {
-  if (!dateStr) return ''
-  const [year, month, day] = dateStr.split('-').map(Number)
-  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
 }
 
 export default function NDAPreview({ values }: Props) {
