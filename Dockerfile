@@ -13,12 +13,9 @@ WORKDIR /app/backend
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Install Python dependencies
-COPY backend/pyproject.toml ./
-RUN uv sync --no-dev
-
-# Copy backend source
+# Copy backend source and install dependencies
 COPY backend/ ./
+RUN uv sync --no-dev
 
 # Copy built frontend static files
 COPY --from=frontend-builder /app/out ./static/
