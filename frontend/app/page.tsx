@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import NDAForm from '@/components/NDAForm'
+import AIChatPanel from '@/components/AIChatPanel'
 import NDAPreview from '@/components/NDAPreview'
 import { FormValues } from '@/lib/types'
 import { isAuthenticated, clearToken } from '@/lib/auth'
@@ -51,8 +51,8 @@ export default function Home() {
     }))
   }, [])
 
-  const handleChange = (field: keyof FormValues, value: string) => {
-    setValues(prev => ({ ...prev, [field]: value }))
+  const handleFieldsUpdate = (updates: Partial<FormValues>) => {
+    setValues(prev => ({ ...prev, ...updates }))
   }
 
   const handleLogout = () => {
@@ -90,9 +90,9 @@ export default function Home() {
 
       {/* Body */}
       <div className="flex flex-1 overflow-hidden print:block print:overflow-visible print:h-auto">
-        {/* Form panel */}
-        <aside className="no-print w-80 shrink-0 overflow-y-auto bg-white border-r border-gray-200">
-          <NDAForm values={values} onChange={handleChange} />
+        {/* Chat panel */}
+        <aside className="no-print w-80 shrink-0 flex flex-col bg-white border-r border-gray-200">
+          <AIChatPanel values={values} onFieldsUpdate={handleFieldsUpdate} />
         </aside>
 
         {/* Preview panel */}
