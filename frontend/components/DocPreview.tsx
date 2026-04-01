@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeRaw from 'rehype-raw'
 import { DocFields } from '@/lib/types'
-import { substituteFields } from '@/lib/utils'
+import { preprocessTemplate, substituteFields } from '@/lib/utils'
 
 interface Props {
   templateContent: string
@@ -26,7 +26,7 @@ export default function DocPreview({ templateContent, fields, docName }: Props) 
     )
   }
 
-  const rendered = substituteFields(templateContent, fields)
+  const rendered = substituteFields(preprocessTemplate(templateContent), fields)
 
   return (
     <div className="max-w-3xl mx-auto bg-white shadow-sm rounded-lg p-8 print:shadow-none print:rounded-none">
