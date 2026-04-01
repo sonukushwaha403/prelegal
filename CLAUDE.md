@@ -8,7 +8,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-The current implementation supports all 11 document types via AI chat with full user authentication and document persistence.
+The current implementation has the V1 technical foundation in place (auth, Docker, scripts) with one document type (Mutual NDA) fully built. AI chat, additional document types, and document persistence are not yet implemented.
 
 ## Development process
 
@@ -54,4 +54,14 @@ Backend available at http://localhost:8000
 - Dark Navy: `#032147` (headings)
 - Gray Text: `#888888`
 
- 
+## Implementation status
+
+### Done
+- **KAN-4** — 12 legal document markdown templates in `templates/` and `catalog.json`
+- **KAN-5** — Mutual NDA Creator: two-panel form + live document preview + print-to-PDF (`frontend/`)
+- **KAN-6** — V1 foundation: FastAPI backend (`backend/`), SQLite database, JWT auth (signup/login), Next.js static export served by FastAPI, multi-stage Dockerfile, `docker-compose.yml`, start/stop scripts for Mac/Linux/Windows
+
+### Not yet built
+- AI chat for document field completion
+- Support for the remaining 11 document types beyond Mutual NDA
+- Document persistence (saving/loading drafts per user)
