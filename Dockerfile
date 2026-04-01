@@ -17,6 +17,10 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 COPY backend/ ./
 RUN uv sync --no-dev --no-install-project
 
+# Copy templates and catalog for runtime access
+COPY catalog.json /app/catalog.json
+COPY templates/ /app/templates/
+
 # Copy built frontend static files
 COPY --from=frontend-builder /app/out ./static/
 

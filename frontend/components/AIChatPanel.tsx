@@ -1,25 +1,25 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { FormValues } from '@/lib/types'
+import { DocFields } from '@/lib/types'
 import { ChatMessage, sendChatMessage } from '@/lib/api'
 
-const GREETING: ChatMessage = {
-  role: 'assistant',
-  content:
-    "Hi! I'll help you draft a Mutual NDA. Let's start with Party 1 — what is your company name and the name of the person who will sign?",
-}
-
 interface Props {
-  values: FormValues
-  onFieldsUpdate: (updates: Partial<FormValues>) => void
+  docFilename: string
+  docName: string
+  fields: DocFields
+  onFieldsUpdate: (updates: DocFields) => void
 }
 
-export default function AIChatPanel({ values, onFieldsUpdate }: Props) {
-  const [messages, setMessages] = useState<ChatMessage[]>([GREETING])
+export default function AIChatPanel({ docFilename, docName, fields, onFieldsUpdate }: Props) {
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [{
+    role: 'assistant',
+    content: `Hi! I'll help you draft a ${docName}. To get started, could you tell me about the parties involved?`,
+  }])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -33,12 +33,12 @@ export default function AIChatPanel({ values, onFieldsUpdate }: Props) {
     const updated = [...messages, userMsg]
     setMessages(updated)
     setInput('')
+    inputRef.current?.focus()
     setLoading(true)
 
     try {
-      // Send full history minus the initial greeting (it's part of the system prompt context)
       const history = updated.filter((_, i) => i > 0)
-      const res = await sendChatMessage(history, values)
+      const res = await sendChatMessage(docFilename, history, fields)
       setMessages(prev => [...prev, { role: 'assistant', content: res.reply }])
       if (Object.keys(res.field_updates).length > 0) {
         onFieldsUpdate(res.field_updates)
@@ -50,6 +50,7 @@ export default function AIChatPanel({ values, onFieldsUpdate }: Props) {
       ])
     } finally {
       setLoading(false)
+      inputRef.current?.focus()
     }
   }
 
@@ -62,23 +63,19 @@ export default function AIChatPanel({ values, onFieldsUpdate }: Props) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="px-5 py-4 border-b border-gray-100">
         <h2 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">
           AI Assistant
         </h2>
-        <p className="text-xs text-gray-500 mt-0.5">Chat to fill in your Mutual NDA</p>
+        <p className="text-xs text-gray-500 mt-0.5">{docName}</p>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
               className={`max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed ${
-                msg.role === 'user'
-                  ? 'bg-[#209dd7] text-white'
-                  : 'bg-gray-100 text-gray-800'
+                msg.role === 'user' ? 'bg-[#209dd7] text-white' : 'bg-gray-100 text-gray-800'
               }`}
             >
               {msg.content}
@@ -95,10 +92,10 @@ export default function AIChatPanel({ values, onFieldsUpdate }: Props) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
       <div className="px-4 py-3 border-t border-gray-100">
         <div className="flex gap-2 items-end">
           <textarea
+            ref={inputRef}
             className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#209dd7] focus:border-transparent resize-none"
             rows={2}
             placeholder="Type your answer... (Enter to send)"

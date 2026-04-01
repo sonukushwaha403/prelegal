@@ -17,3 +17,11 @@ export interface FormValues {
   jurisdiction: string
   modifications: string
 }
+
+export interface CatalogEntry {
+  name: string
+  description: string
+  filename: string
+}
+
+export type DocFields = Record<string, string>

@@ -2,106 +2,84 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import AIChatPanel from '@/components/AIChatPanel'
-import NDAPreview from '@/components/NDAPreview'
-import { FormValues } from '@/lib/types'
 import { isAuthenticated, clearToken } from '@/lib/auth'
-
-// Re-export so existing imports from '@/app/page' continue to work
-export type { FormValues }
-
-const defaultValues: FormValues = {
-  party1Company: '',
-  party1Name: '',
-  party1Title: '',
-  party1Address: '',
-  party2Company: '',
-  party2Name: '',
-  party2Title: '',
-  party2Address: '',
-  purpose: 'Evaluating whether to enter into a business relationship with the other party.',
-  effectiveDate: '', // set client-side in useEffect to avoid SSR/client hydration mismatch
-  mndaTermType: 'expires',
-  mndaTermYears: '1',
-  confidentialityType: 'years',
-  confidentialityYears: '1',
-  governingLaw: '',
-  jurisdiction: '',
-  modifications: '',
-}
+import { getCatalog } from '@/lib/api'
+import { CatalogEntry } from '@/lib/types'
 
 export default function Home() {
   const router = useRouter()
-  const [authReady, setAuthReady] = useState(false)
-  const [values, setValues] = useState<FormValues>(defaultValues)
+  const [catalog, setCatalog] = useState<CatalogEntry[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!isAuthenticated()) {
       router.replace('/login')
-    } else {
-      setAuthReady(true)
+      return
     }
+    getCatalog()
+      .then(setCatalog)
+      .finally(() => setLoading(false))
   }, [router])
-
-  // Set today's date only on the client to prevent SSR/hydration mismatch
-  useEffect(() => {
-    setValues(prev => ({
-      ...prev,
-      effectiveDate: prev.effectiveDate || new Date().toISOString().split('T')[0],
-    }))
-  }, [])
-
-  const handleFieldsUpdate = (updates: Partial<FormValues>) => {
-    setValues(prev => ({ ...prev, ...updates }))
-  }
 
   const handleLogout = () => {
     clearToken()
     router.replace('/login')
   }
 
-  if (!authReady) return null
+  const docFilename = (entry: CatalogEntry) =>
+    entry.filename.replace('templates/', '')
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gray-100 print:h-auto print:overflow-visible">
-      {/* Header */}
-      <header className="no-print shrink-0 bg-slate-900 text-white px-6 py-3 flex items-center justify-between border-b border-slate-700">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <header className="bg-slate-900 text-white px-8 py-4 flex items-center justify-between border-b border-slate-700">
         <div>
-          <h1 className="text-base font-semibold tracking-tight">Mutual NDA Creator</h1>
-          <p className="text-slate-400 text-xs mt-0.5">
-            Common Paper Mutual Non-Disclosure Agreement · Version 1.0
-          </p>
+          <h1 className="text-lg font-semibold tracking-tight text-white">Prelegal</h1>
+          <p className="text-slate-400 text-xs mt-0.5">AI-powered legal document drafting</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => window.print()}
-            className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-          >
-            Download PDF
-          </button>
-          <button
-            onClick={handleLogout}
-            className="text-slate-400 hover:text-white text-sm transition-colors"
-          >
-            Sign out
-          </button>
-        </div>
+        <button
+          onClick={handleLogout}
+          className="text-slate-400 hover:text-white text-sm transition-colors"
+        >
+          Sign out
+        </button>
       </header>
 
-      {/* Body */}
-      <div className="flex flex-1 overflow-hidden print:block print:overflow-visible print:h-auto">
-        {/* Chat panel */}
-        <aside className="no-print w-80 shrink-0 flex flex-col bg-white border-r border-gray-200">
-          <AIChatPanel values={values} onFieldsUpdate={handleFieldsUpdate} />
-        </aside>
+      <main className="flex-1 px-8 py-10 max-w-6xl mx-auto w-full">
+        <h2 className="text-2xl font-bold text-[#032147] mb-2">Document Templates</h2>
+        <p className="text-[#888888] text-sm mb-8">
+          Choose a document type to get started. Our AI will guide you through the process.
+        </p>
 
-        {/* Preview panel */}
-        <main className="flex-1 overflow-y-auto bg-slate-200 print:bg-white print:overflow-visible print:h-auto print:flex-none">
-          <div className="py-8 px-6 print:p-0">
-            <NDAPreview values={values} />
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-2/3 mb-3" />
+                <div className="h-3 bg-gray-100 rounded mb-2" />
+                <div className="h-3 bg-gray-100 rounded w-5/6" />
+              </div>
+            ))}
           </div>
-        </main>
-      </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {catalog.map(entry => (
+              <div
+                key={entry.filename}
+                className="bg-white rounded-xl border border-gray-200 hover:border-[#209dd7] hover:shadow-md transition-all p-5 flex flex-col"
+              >
+                <h3 className="text-sm font-semibold text-[#032147] mb-2">{entry.name}</h3>
+                <p className="text-xs text-[#888888] leading-relaxed flex-1">{entry.description}</p>
+                <button
+                  onClick={() => router.push(`/create?doc=${docFilename(entry)}`)}
+                  className="mt-4 bg-[#753991] hover:bg-[#5f2d75] text-white text-xs font-medium px-4 py-2 rounded-lg transition-colors"
+                >
+                  Create Document
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   )
 }
