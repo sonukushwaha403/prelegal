@@ -1,5 +1,6 @@
-import os
-from typing import Optional
+import json
+import re
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel
 from litellm import completion
@@ -11,30 +12,64 @@ router = APIRouter()
 MODEL = "openrouter/openai/gpt-oss-120b"
 EXTRA_BODY = {"provider": {"order": ["cerebras"]}}
 
-SYSTEM_PROMPT = """You are a legal document assistant helping users fill out a Mutual Non-Disclosure Agreement (MNDA).
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+CATALOG_PATH = PROJECT_ROOT / "catalog.json"
+TEMPLATES_DIR = PROJECT_ROOT / "templates"
 
-Conduct a friendly, natural conversation to collect all required information. Ask about 1-2 fields at a time. When the user provides information, extract it into the relevant fields.
+FIELD_PATTERN = re.compile(
+    r'<span class="(?:coverpage|keyterms|orderform|businessterms|sow)_link"[^>]*>([^<]+)</span>'
+)
+
+SUPPORTED_DOCS = ", ".join(
+    item["name"] for item in json.loads(CATALOG_PATH.read_text())
+)
+
+
+def extract_fields(template_content: str) -> list[str]:
+    """Extract unique field names from span-link placeholders, filtering possessives and plurals."""
+    raw = set(FIELD_PATTERN.findall(template_content))
+    # Filter out possessive forms (Customer's) and plurals (Periods) if base exists
+    base_fields = set()
+    apos_s = chr(0x2019) + "s"  # right single quotation mark + s
+    for f in raw:
+        if f.endswith(apos_s) or f.endswith("'s"):
+            continue  # skip possessives
+        base_fields.add(f)
+    # Remove plurals where singular exists
+    result = set()
+    for f in base_fields:
+        if f.endswith('s') and f[:-1] in base_fields:
+            continue  # skip plural if singular exists
+        result.add(f)
+    return sorted(result)
+
+
+def read_template(filename: str) -> str:
+    """Read a template file, raising 404 if not found."""
+    path = PROJECT_ROOT / filename
+    if not path.exists() or not str(path).startswith(str(TEMPLATES_DIR)):
+        raise HTTPException(status_code=404, detail="Template not found")
+    return path.read_text(encoding="utf-8")
+
+
+def build_system_prompt(doc_name: str, fields: list[str], current_fields: dict) -> str:
+    field_list = "\n".join(f"- {f}" for f in fields)
+    filled = {k: v for k, v in current_fields.items() if v}
+    context = f"\nCurrently filled fields: {filled}" if filled else "\nNo fields filled yet."
+
+    return f"""You are a legal document assistant helping users fill out a "{doc_name}".
+
+Conduct a friendly, natural conversation to collect all required information. Ask about 1-2 fields at a time. When the user provides information, extract it into the relevant fields using the exact field names below.
+
+Always end your reply with a follow-up question about the next unfilled field(s), unless all fields are complete.
 
 Fields to collect:
-- party1Company: Party 1's company name
-- party1Name: Party 1's signatory full name
-- party1Title: Party 1's signatory title (e.g. CEO)
-- party1Address: Party 1's notice address (email or postal)
-- party2Company: Party 2's company name
-- party2Name: Party 2's signatory full name
-- party2Title: Party 2's signatory title
-- party2Address: Party 2's notice address (email or postal)
-- purpose: The purpose for which confidential information may be used
-- effectiveDate: Agreement effective date in YYYY-MM-DD format
-- mndaTermType: "expires" if it has a fixed term, "continues" if it continues until terminated
-- mndaTermYears: Number of years as a string (only when mndaTermType is "expires")
-- confidentialityType: "years" if confidentiality lasts N years, "perpetuity" if it lasts forever
-- confidentialityYears: Number of years as a string (only when confidentialityType is "years")
-- governingLaw: Governing state (e.g. "Delaware")
-- jurisdiction: Courts for disputes (e.g. "courts located in New Castle, DE")
-- modifications: Any modifications to standard terms (optional, can be empty string)
+{field_list}
 
-Current field values will be provided. Focus on empty fields. Only set a field when the user has clearly stated that information. Return null for fields not yet known."""
+Only set a field in field_updates when the user has clearly provided that information. Use the exact field name as the key.
+
+If the user asks for a document type we don't support, explain that and suggest the closest match from our supported types: {SUPPORTED_DOCS}
+{context}"""
 
 
 class ChatMessage(BaseModel):
@@ -42,59 +77,20 @@ class ChatMessage(BaseModel):
     content: str
 
 
-class CurrentFields(BaseModel):
-    party1Company: str = ""
-    party1Name: str = ""
-    party1Title: str = ""
-    party1Address: str = ""
-    party2Company: str = ""
-    party2Name: str = ""
-    party2Title: str = ""
-    party2Address: str = ""
-    purpose: str = ""
-    effectiveDate: str = ""
-    mndaTermType: str = "expires"
-    mndaTermYears: str = "1"
-    confidentialityType: str = "years"
-    confidentialityYears: str = "1"
-    governingLaw: str = ""
-    jurisdiction: str = ""
-    modifications: str = ""
-
-
-class FieldUpdates(BaseModel):
-    party1Company: Optional[str] = None
-    party1Name: Optional[str] = None
-    party1Title: Optional[str] = None
-    party1Address: Optional[str] = None
-    party2Company: Optional[str] = None
-    party2Name: Optional[str] = None
-    party2Title: Optional[str] = None
-    party2Address: Optional[str] = None
-    purpose: Optional[str] = None
-    effectiveDate: Optional[str] = None
-    mndaTermType: Optional[str] = None
-    mndaTermYears: Optional[str] = None
-    confidentialityType: Optional[str] = None
-    confidentialityYears: Optional[str] = None
-    governingLaw: Optional[str] = None
-    jurisdiction: Optional[str] = None
-    modifications: Optional[str] = None
-
-
 class AIResponse(BaseModel):
     reply: str
-    field_updates: FieldUpdates
+    field_updates: dict[str, str]
 
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage]
-    current_fields: CurrentFields
+    template_filename: str
+    current_fields: dict[str, str] = {}
 
 
 class ChatResponse(BaseModel):
     reply: str
-    field_updates: dict
+    field_updates: dict[str, str]
 
 
 def get_current_user_id(authorization: str = Header(default=None)) -> int:
@@ -111,13 +107,44 @@ def get_current_user_id(authorization: str = Header(default=None)) -> int:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-@router.post("/nda", response_model=ChatResponse)
-def chat_nda(req: ChatRequest, _user_id: int = Depends(get_current_user_id)):
-    """Chat with the AI to fill in Mutual NDA fields."""
-    filled = {k: v for k, v in req.current_fields.model_dump().items() if v}
-    context = f"\nCurrently filled fields: {filled}" if filled else "\nNo fields filled yet."
+@router.get("/catalog")
+def get_catalog():
+    """Return the list of supported document types."""
+    return json.loads(CATALOG_PATH.read_text())
 
-    messages = [{"role": "system", "content": SYSTEM_PROMPT + context}]
+
+@router.get("/template")
+def get_template(filename: str):
+    """Return the raw markdown content of a template."""
+    content = read_template(filename)
+    fields = extract_fields(content)
+    # Look up the document name from the catalog
+    catalog = json.loads(CATALOG_PATH.read_text())
+    doc_name = filename
+    for item in catalog:
+        if item["filename"] == filename:
+            doc_name = item["name"]
+            break
+    return {"content": content, "fields": fields, "name": doc_name}
+
+
+@router.post("/message", response_model=ChatResponse)
+def chat_message(req: ChatRequest, _user_id: int = Depends(get_current_user_id)):
+    """Chat with the AI to fill in document fields."""
+    template_content = read_template(req.template_filename)
+    fields = extract_fields(template_content)
+
+    # Look up document name
+    catalog = json.loads(CATALOG_PATH.read_text())
+    doc_name = req.template_filename
+    for item in catalog:
+        if item["filename"] == req.template_filename:
+            doc_name = item["name"]
+            break
+
+    system_prompt = build_system_prompt(doc_name, fields, req.current_fields)
+
+    messages = [{"role": "system", "content": system_prompt}]
     messages += [{"role": m.role, "content": m.content} for m in req.messages]
 
     response = completion(
@@ -129,6 +156,7 @@ def chat_nda(req: ChatRequest, _user_id: int = Depends(get_current_user_id)):
     )
 
     result = AIResponse.model_validate_json(response.choices[0].message.content)
-    updates = {k: v for k, v in result.field_updates.model_dump().items() if v is not None}
+    # Only return non-empty updates
+    updates = {k: v for k, v in result.field_updates.items() if v}
 
     return ChatResponse(reply=result.reply, field_updates=updates)

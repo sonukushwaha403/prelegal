@@ -20,5 +20,9 @@ RUN uv sync --no-dev --no-install-project
 # Copy built frontend static files
 COPY --from=frontend-builder /app/out ./static/
 
+# Copy templates and catalog (needed by chat endpoint)
+COPY catalog.json /app/catalog.json
+COPY templates/ /app/templates/
+
 EXPOSE 8000
 CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
